@@ -121,11 +121,117 @@ The strongest absolute correlation among order amount, discount percentage, quan
 
 ## Part B — Customer Segmentation and Lapse Prediction
 
-To be completed after implementing and validating Part B.
+## Part B — Customer Segmentation and Lapse Prediction
+
+### 1. RFM Analysis
+
+RFM analysis groups customers based on their recent purchases, order frequency, and total spending.
+
+| Metric | Result |
+|---|---:|
+| Total customers | 1,175 |
+| Average recency | 33.56 days |
+| Average frequency | 9.46 orders |
+| Average spending | INR 2,552.06 |
+
+Output: `outputs/customer_rfm.csv`
+
+### 2. Customer Segmentation
+
+K-Means clustering was tested with 2 to 8 clusters. **K = 4** was selected because it had the best silhouette score and produced useful customer groups.
+
+| Segment | Customers | Average spending (INR) | Recommended action |
+|---|---:|---:|---|
+| Growth Opportunity | 436 | 1,057.62 | Encourage repeat purchases |
+| Premium | 138 | 7,129.70 | Offer loyalty rewards |
+| Loyal Regulars | 419 | 3,410.02 | Promote bundles |
+| At-Risk Customers | 182 | 685.99 | Send win-back offers |
+
+Output: `outputs/customer_segments.csv`
+
+### 3. Lapse Prediction
+
+The model predicts customers who may stop ordering. The dataset contains 1,156 customers, including 443 labelled as lapsed.
+
+Random Forest performed better than Logistic Regression based on cross-validation F1.
+
+| Model | Test accuracy | Test F1 |
+|---|---:|---:|
+| Logistic Regression | 72.84% | 0.648 |
+| Random Forest | 73.71% | 0.655 |
+
+**Selected model:** Random Forest.
+
+### 4. Oversampling Experiment
+
+Oversampling was tested to identify more potentially lapsed customers.
+
+| Metric | Without oversampling | With oversampling |
+|---|---:|---:|
+| Accuracy | 72.84% | 71.55% |
+| Precision | 64.44% | 58.91% |
+| Recall | 65.17% | 85.39% |
+| F1 score | 0.648 | 0.697 |
+
+Oversampling improved recall but reduced precision and accuracy.
+
+### 5. Model Outputs
+
+The model was saved and reloaded successfully, and its predictions matched the original predictions.
+
+Generated files:
+
+- `outputs/customer_segments.csv`
+- `outputs/lapse_model.joblib`
+- `outputs/retention_list.csv`
+- `outputs/part_b_report.txt`
+
+### Limitations
+
+- The project uses synthetic data.
+- Model predictions are estimates, not guarantees.
+- The retention list is for demonstration and does not prove campaign effectiveness.
+- Premium customer selection uses segmentation across the full data period, so it is not a fully independent prospective evaluation.
 
 ## Part C — Support Ticket Triage with Guardrails
 
-To be completed after implementing and validating Part C.
+Implemented a ticket classification system using `mock_llm.py` to classify customer support tickets into billing, delivery, technical, and fraud categories.
+
+### Features
+- Removed personal information such as emails, phone numbers, and order IDs.
+- Skipped empty tickets and flagged long tickets.
+- Compared zero-shot and few-shot classification.
+- Added retries for temporary model errors.
+- Validated model responses and handled invalid outputs.
+- Added token-budget checking and customer-based ticket routing.
+
+### Results
+
+| Metric | Zero-Shot | Few-Shot |
+|---|---:|---:|
+| Tickets processed | 164 | 164 |
+| Classified tickets | 147 | 147 |
+| Accuracy | 85.71% | 100% |
+| Total tokens | 13,612 | 26,560 |
+
+### PII Redaction
+- Emails removed: 55
+- Phone numbers removed: 91
+- Order IDs removed: 132
+- Remaining PII matches: 0
+
+### Final Ticket Routing
+- Support queue: 102
+- Security team: 34
+- Human review: 17
+- Premium desk: 11
+
+### Output Files
+- `outputs/triage_results.csv` — Final ticket classification results.
+- `outputs/triage_budget_demo.csv` — Token-budget demonstration.
+
+### Conclusion
+Few-shot classification achieved 100% accuracy on the 147 classified tickets, using more tokens than zero-shot classification. Tickets with empty text, excessive length, invalid outputs, or exhausted budgets were routed for human review.
 
 ## Part D — Policy-Based Support Agent
 
