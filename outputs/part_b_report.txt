@@ -1,0 +1,74 @@
+PART B — CUSTOMER SEGMENTATION AND LAPSE PREDICTION
+Snapshot: 2025-10-01 00:00:00
+Lapse feature cutoff: 2025-09-01 00:00:00
+
+K-Means evaluation
+------------------
+ k  inertia  silhouette
+ 2 1820.761       0.465
+ 3 1268.235       0.445
+ 4  743.071       0.526
+ 5  617.367       0.480
+ 6  503.171       0.482
+ 7  408.460       0.416
+ 8  366.503       0.412
+
+Segment profile
+---------------
+ segment_id  size  mean_recency  mean_frequency  mean_monetary       segment_name                                         recommended_action
+          0   436         28.86            3.77        1057.62 Growth Opportunity              Encourage a second or more frequent purchase.
+          1   138         24.12            6.77        7129.70            Premium Offer loyalty rewards and personalised retention benefits.
+          2   419          8.77           19.40        3410.02     Loyal Regulars            Maintain repeat ordering with relevant bundles.
+          3   182        109.04            2.20         685.99  At-Risk Customers               Send a targeted win-back offer and reminder.
+
+Choosing K
+----------
+K=4 is selected for interpretability and the strong silhouette score. Inertia always decreases as K increases because each point can be closer to a cluster centre when more centres are available. Therefore, the lowest inertia alone is not a reason to choose K=8; the elbow, silhouette and useful business-sized segments must also be considered.
+
+PCA
+---
+Explained variance ratios: [0.634, 0.218]; total: 0.852.
+
+Lapse cohort and baseline
+-------------------------
+Cohort: 1156; lapsed: 443 (38.32%); train: 924; test: 232.
+Baseline: {'accuracy': 0.6163793103448276, 'precision_lapsed': 0.0, 'recall_lapsed': 0.0, 'f1_lapsed': 0.0, 'confusion_matrix': [[143, 0], [89, 0]]}
+
+Model tuning and test evaluation
+--------------------------------
+Logistic best parameters: {'model__C': 100}; best CV F1: 0.6506; test: {'accuracy': 0.728448275862069, 'precision_lapsed': 0.6444444444444445, 'recall_lapsed': 0.651685393258427, 'f1_lapsed': 0.6480446927374302, 'confusion_matrix': [[111, 32], [31, 58]]}
+Random Forest best parameters: {'model__max_depth': 8, 'model__min_samples_leaf': 10}; best CV F1: 0.6811; test: {'accuracy': 0.7370689655172413, 'precision_lapsed': 0.6590909090909091, 'recall_lapsed': 0.651685393258427, 'f1_lapsed': 0.655367231638418, 'confusion_matrix': [[113, 30], [31, 58]]}
+Selected model: Random Forest; metrics: {'accuracy': 0.7370689655172413, 'precision_lapsed': 0.6590909090909091, 'recall_lapsed': 0.651685393258427, 'f1_lapsed': 0.655367231638418, 'confusion_matrix': [[113, 30], [31, 58]]}
+The test set was not used for hyperparameter tuning. Missing a lapsing customer may lose future orders, while wrongly targeting a loyal customer wastes discounts and retention budget.
+
+Training-only oversampling
+--------------------------
+Original class counts: {0: 570, 1: 354}; balanced counts: {1: 570, 0: 570}.
+Unbalanced logistic: {'accuracy': 0.728448275862069, 'precision_lapsed': 0.6444444444444445, 'recall_lapsed': 0.651685393258427, 'f1_lapsed': 0.6480446927374302, 'confusion_matrix': [[111, 32], [31, 58]]}
+Balanced logistic: {'accuracy': 0.7155172413793104, 'precision_lapsed': 0.5891472868217055, 'recall_lapsed': 0.8539325842696629, 'f1_lapsed': 0.6972477064220184, 'confusion_matrix': [[90, 53], [13, 76]]}
+Oversampling is applied only to training rows; the original test set remains unchanged. Compare recall, precision and F1 to understand whether more at-risk customers are found at the cost of extra false alarms.
+
+Random Forest feature importance
+--------------------------------
+                      feature  importance
+           numeric__frequency    0.279585
+            numeric__monetary    0.271175
+             numeric__recency    0.115146
+numeric__avg_delivery_minutes    0.061235
+   numeric__cancellation_rate    0.052319
+
+Logistic Regression coefficient signs
+-------------------------------------
+                                    feature  coefficient     sign
+                         numeric__frequency    -1.698239 negative
+categorical__favourite_category_Electronics    -1.136713 negative
+    categorical__favourite_category_Grocery    -0.448673 negative
+
+Model persistence
+-----------------
+Saved to outputs/lapse_model.joblib. Reloaded predictions match exactly: True.
+
+Premium retention list
+----------------------
+Rows: 10; truly lapsed: 2.
+This list is illustrative, not a leakage-free evaluation, because the Premium flag uses whole-window RFM including September. Model features themselves use only orders before 2025-09-01.
